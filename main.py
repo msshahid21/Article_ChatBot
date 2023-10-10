@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 from secret_key import api_key
 os.environ['OPENAI_API_KEY'] = api_key
 
+file_path = "faiss_store_openai.pkl"
+
 # Setting Up Streamlit Interface
 st.title("News Research Tool")
 
@@ -27,12 +29,12 @@ for i in range(3):
 
 process_url_clicked = st.sidebar.button("Process URLs")
 
-main_placefolder = st.empty()
+main_placeholder = st.empty()
 
 if process_url_clicked:
     # Loading Data from User-Inputted URLs
     loader = UnstructuredURLLoader(urls = urls)
-    main_placefolder.text("Data Loading...Started...")     # Updating Progress Bar
+    main_placeholder.text("Data Loading...Started...")     # Updating Progress Bar
     data = loader.load()
 
     # Spltting Data
@@ -40,18 +42,38 @@ if process_url_clicked:
         separators = ['\n\n', '\n', '.', ','],
         chunk_size = 1000
     )
-    main_placefolder.text("Text Splitter...Started...")     # Updating Progress Bar
+    main_placeholder.text("Text Splitter...Started...")     # Updating Progress Bar
     docs = text_splitter.split_documents(data)
 
     # Create Embeddings and Save it to FAISS Index
     embeddings = OpenAIEmbeddings()
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
-    main_placefolder.text("Embedding Vector Started Building...")     # Updating Progress Bar
+    main_placeholder.text("Embedding Vector Started Building...")     # Updating Progress Bar
     time.sleep(2)
 
-    main_placefolder.text("Done Importing URLs Data")     # Updating Progress Bar
-
     # Save the FAISS Index to a Pickle File
-    file_path = "faiss_store_openai.pkl"
     with open(file_path, "wb") as f:
         pickle.dump(vectorstore_openai, f)
+
+# Adding User Question Section
+llm = OpenAI(temperature = 0.9, max_tokens = 500)       # Creating OpenAI LLM
+query = main_placeholder.text_input("Question: ")
+if query:
+    if os.path.exists(file_path):
+        # Reading Pickle File
+        with open(file_path, "rb") as f:
+            vectorstore = pickle.load(f)
+            chain = RetrievalQAWithSourcesChain.from_llm(llm = llm, retriever = vectorstore.as_retriever())
+            result = chain({'question': query}, return_only_outputs = True)
+
+            ## Creating Answer Section
+            st.header("Answer")
+            st.write(result["answer"])
+
+            # Display Sources if Available
+            sources = result.get("sources", "")
+            if sources:
+                st.subheader("Sources:")
+                sources_list = sources.split("\n")      # Split Sources by New Line
+                for source in sources_list:
+                    st.write(source)
