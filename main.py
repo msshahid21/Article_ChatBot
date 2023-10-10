@@ -49,6 +49,8 @@ if process_url_clicked:
     main_placefolder.text("Embedding Vector Started Building...")     # Updating Progress Bar
     time.sleep(2)
 
+    main_placefolder.text("Done Importing URLs Data")     # Updating Progress Bar
+
     # Save the FAISS Index to a Pickle File
     file_path = "faiss_store_openai.pkl"
     with open(file_path, "wb") as f:
