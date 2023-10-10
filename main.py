@@ -27,9 +27,12 @@ for i in range(3):
 
 process_url_clicked = st.sidebar.button("Process URLs")
 
+main_placefolder = st.empty()
+
 if process_url_clicked:
     # Loading Data from User-Inputted URLs
     loader = UnstructuredURLLoader(urls = urls)
+    main_placefolder.text("Data Loading...Started...")     # Updating Progress Bar
     data = loader.load()
 
     # Spltting Data
@@ -37,11 +40,14 @@ if process_url_clicked:
         separators = ['\n\n', '\n', '.', ','],
         chunk_size = 1000
     )
+    main_placefolder.text("Text Splitter...Started...")     # Updating Progress Bar
     docs = text_splitter.split_documents(data)
 
     # Create Embeddings and Save it to FAISS Index
     embeddings = OpenAIEmbeddings()
     vectorstore_openai = FAISS.from_documents(docs, embeddings)
+    main_placefolder.text("Embedding Vector Started Building...")     # Updating Progress Bar
+    time.sleep(2)
 
     # Save the FAISS Index to a Pickle File
     file_path = "faiss_store_openai.pkl"
