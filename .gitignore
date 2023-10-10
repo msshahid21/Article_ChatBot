@@ -161,3 +161,4 @@ cython_debug/
 
 # Files to ignore in push
 secret_key.py
+faiss_store_openai.pkl
